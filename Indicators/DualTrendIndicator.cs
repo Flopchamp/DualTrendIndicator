@@ -92,6 +92,10 @@ namespace NinjaTrader.NinjaScript.Indicators.PropTraderz
                 ArrowUpColor = Brushes.AliceBlue;
                 ArrowDownColor = Brushes.AliceBlue;
 
+                DrawEarlyArrows = true;
+                EarlyArrowUpColor = Brushes.DodgerBlue;
+                EarlyArrowDownColor = Brushes.DodgerBlue;
+
                 PlotColor = Brushes.Yellow;
                 // Removed the Trend plot to avoid plotting in subchart
                 // AddPlot(new Stroke(Brushes.Black, 4), PlotStyle.Dot, "Trend");
@@ -223,6 +227,28 @@ namespace NinjaTrader.NinjaScript.Indicators.PropTraderz
             if (flatSection[0])
             {
                 Draw.Dot(this, "TrendDot" + CurrentBar, false, 0, TrendSeries[0], PlotColor);
+            }
+
+            // Early Arrow Logic - prints arrow on the FIRST dot of each new flat section
+            // Determines direction from CCI: CCI >= 0 means uptrend mode (UP arrow),
+            // CCI < 0 means downtrend mode (DOWN arrow). Uses only current-bar data,
+            // so there is no repainting or backpainting.
+            if (DrawEarlyArrows && flatSection[0] && _direction[1] != 0)
+            {
+                if (cciVal >= 0)
+                {
+                    double earlySpot = Math.Min(Low[0], TrendSeries[0]) - ArrowDisplacement * TickSize;
+                    Draw.Text(this, "earlysigup" + CurrentBar, true, "h", 0, earlySpot, 0,
+                        EarlyArrowUpColor, textFont, TextAlignment.Center,
+                        Brushes.Transparent, Brushes.Transparent, 5);
+                }
+                else
+                {
+                    double earlySpot = Math.Max(High[0], TrendSeries[0]) + ArrowDisplacement * TickSize;
+                    Draw.Text(this, "earlysigdown" + CurrentBar, true, "i", 0, earlySpot, 0,
+                        EarlyArrowDownColor, textFont, TextAlignment.Center,
+                        Brushes.Transparent, Brushes.Transparent, 5);
+                }
             }
 
             if (DrawArrows)
@@ -373,6 +399,31 @@ namespace NinjaTrader.NinjaScript.Indicators.PropTraderz
         {
             get { return Serialize.BrushToString(ArrowDownColor); }
             set { ArrowDownColor = Serialize.StringToBrush(value); }
+        }
+
+        [Display(Name = "Draw Early Arrows?", Description = "Draw arrows on the first dot of each new flat section", GroupName = "BouncePoint Drawing Objects", Order = 5)]
+        public bool DrawEarlyArrows { get; set; }
+
+        [XmlIgnore()]
+        [Display(Name = "Color for Early Up Arrows", Description = "Color for Up Arrow on First Dot", GroupName = "BouncePoint Drawing Objects", Order = 6)]
+        public Brush EarlyArrowUpColor { get; set; }
+
+        [Browsable(false)]
+        public string EarlyArrowUpColorSerialize
+        {
+            get { return Serialize.BrushToString(EarlyArrowUpColor); }
+            set { EarlyArrowUpColor = Serialize.StringToBrush(value); }
+        }
+
+        [XmlIgnore()]
+        [Display(Name = "Color for Early Down Arrows", Description = "Color for Down Arrow on First Dot", GroupName = "BouncePoint Drawing Objects", Order = 7)]
+        public Brush EarlyArrowDownColor { get; set; }
+
+        [Browsable(false)]
+        public string EarlyArrowDownColorSerialize
+        {
+            get { return Serialize.BrushToString(EarlyArrowDownColor); }
+            set { EarlyArrowDownColor = Serialize.StringToBrush(value); }
         }
 
         #endregion
